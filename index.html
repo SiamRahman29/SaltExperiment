@@ -1,0 +1,361 @@
+<html>
+    <head>
+        <title>Let's hope this works</title>
+    </head>
+    <style>
+        #playground {
+            margin : -8px;
+        }
+        
+        #reagent_list {
+            position : absolute;
+            top : 70px;
+            left : 870px;
+            font-size: 30px;
+        }
+
+        #addButton{
+            position : absolute;
+            top : 200px;
+            left : 870px;
+        }
+        #another-button{
+            position : absolute;
+            top : 270px;
+            left : 870px;
+        }
+        #result-form{
+            position : absolute;
+            top : 100px;
+            left : 100px;
+            font-size : 30px;
+        }
+        #result{
+            color:lightcoral;
+            position : absolute;
+            font-size : 36px;
+            top : 450px;
+            left : 730px;
+            border : 1px dashed gold;
+        }
+    </style>
+    <body>
+        <p align = "center">
+            <!--This is the canvas where I'm gonna work-->
+            <canvas id = "playground"></canvas>
+        </p>
+        <!--This is the list of reagents you can use-->
+        <form id = "reagent_list">
+            <label>
+                Pick your reagent!
+                <select id = "reagent">
+                    <option value = "Pot-Ferro">Potassium Ferrocyanide</option>
+                    <option value = "Pot-Ferri">Potassium Ferricyanide</option>
+                    <option value = "Pot-Pyro">Potassium Pyro-antimonate</option>
+                    <option value = "Amm-Oxa">Ammonium Oxalate</option>
+                    <option value = "Nes-Rea">Nessler's Reagent</option>
+                    <option value = "Sod-Hyd">Sodium Hydroxide</option>
+                    <option value = "Hyd-Chl">Hydrogen Chloride</option>
+                    <option value = "Bar-Nit">Barium Nitrate</option>
+                    <option value = "Sil-Nit">Silver Nitrate</option>
+                    <option value = "Lea-Ace">Lead Acetate</option>
+                
+                     
+                </select>
+            </label><br><br>
+            <button type = "submit">Get Reagent</button>
+            
+        </form>
+        <button id = "addButton">Add Reagent!</button>
+        <button id = 'another-button'>Try another reagent</button>
+        <form id = "result-form">
+            <label>
+            Which salt do you think it is?
+            <select id = "positive-answer">
+                <option value = "Na+">Sodium</option>
+                <option value = "Fe2+">Ferrus</option>
+                <option value = "Fe3+">Ferric</option>
+                <option value = "Cu2+">Cupric</option>
+                <option value = "Zn2+">Zinc</option>
+                <option value = "Al3+">Alluminium</option>
+                <option value = "NH4+">Ammonium</option>
+                <option value = "Ca2+">Calcium</option>
+                
+                
+
+            </select>
+            <select id = "negative-answer">
+                <option value = "SO2-">Sulphate</option>
+                <option value = "CO3-">Carbonate</option>
+                <option value = "Cl-">Chloride</option>
+            </select>
+            </label><br><br>
+            <button type = "submit">Lock it!</button>
+        </form>
+        
+        <span id = "result"></span>
+
+
+    </body>
+    <!--These are the source codes of ProcessingJS and jQuery or in Layman's terms these are the dictionaries of the languages I'm using-->
+    <script src = "processing.min.js"></script>
+    <script src = "jquery.js"></script>
+    
+    
+    <script>
+        var sketchProc = function(processingInstance){
+                  
+        with(processingInstance){
+            size(1536,754);
+            frameRate(30);
+
+            //This is where the game begins
+            
+            background(97,228,228);
+            noStroke();
+            
+            //Drawing the table
+            fill(128, 64, 50);
+            quad(0,656,1366,656,1266,280,120,280);
+            
+            //The function for drawing the test-tube. You just have to add where you want it
+            var drawTesttube = function(xpos,ypos){
+                
+                fill(239,239,239);
+                strokeWeight(3);
+                stroke(1);
+                rect(xpos,ypos,60,230,0,0,30,30);
+                   
+            };
+            
+            
+            //This code generates a random salt
+            
+            var saltcollection = ["Na+","Fe3+","Fe2+","Cu2+","Al3+","Zn2+","NH4+","Ca2+","SO2-","Cl-","CO3-"];            
+            var salt = [saltcollection[floor(random(0,8))] ,saltcollection[floor(random(8,saltcollection.length))]];
+            //console.log(salt);
+            
+            
+            
+            //This one's the central tube that you're gonna work on
+                        
+            drawTesttube(545,245);
+
+             //This is the solution inside the tube
+
+            rect(545+4,245+125,52,100,0,0,30,30);
+
+                      
+                                
+            //This one's the reagent tube that changes color according to the reagent you've picked from the list
+            
+            var centraltubex = 714;
+            var centraltubey = 125;      
+            drawTesttube(centraltubex,125);
+            strokeWeight(3);
+            stroke(1);
+            
+            $("#reagent_list").on("submit",function(event){
+                event.preventDefault();
+                
+                
+                var $reagent = $("#reagent");
+                var reagent = $reagent.val();
+                if(reagent === "Pot-Ferro"){
+                    fill(0,0,70);
+                    rect(centraltubex+4,centraltubey+125,52,100,0,0,30,30);    
+                }
+                else if(reagent === "Sod-Hyd"){
+                    fill(220,220,220);
+                    rect(centraltubex+4,centraltubey+125,52,100,0,0,30,30);
+                }
+                else if(reagent === "Nes-Rea"){
+                    fill(225,225,0);
+                    rect(centraltubex+4,centraltubey+125,52,100,0,0,30,30);
+                }
+                else if(reagent === "Pot-Ferri"){
+                    fill(120,0,0);
+                    rect(centraltubex+4,centraltubey+125,52,100,0,0,30,30);
+                }
+                else if(reagent === "Amm-Oxa"){
+                    fill(210,210,210);
+                    rect(centraltubex+4,centraltubey+125,52,100,0,0,30,30);
+                }
+                else if(reagent === "Pot-Pyro"){
+                    fill(225,225,225);
+                    rect(centraltubex+4,centraltubey+125,52,100,0,0,30,30);
+                }
+                else if(reagent === "Sil-Nit"){
+                    fill(245,245,245);
+                    rect(centraltubex+4,centraltubey+125,52,100,0,0,30,30);
+                }
+                else if(reagent === "Bar-Nit"){
+                    fill(240,240,240);
+                    rect(centraltubex+4,centraltubey+125,52,100,0,0,30,30);
+                }
+                else if(reagent === "Lea-Ace"){
+                    fill(242,242,242);
+                    rect(centraltubex+4,centraltubey+125,52,100,0,0,30,30);
+                }
+                else if(reagent === "Hyd-Chl"){
+                    fill(255,255,89);
+                    rect(centraltubex+4,centraltubey+125,52,100,0,0,30,30);
+                }
+                
+                           
+            });
+
+            //This part controls what happens after you add the reagent
+            
+            $("#addButton").on("click",function(){
+                
+               var $reagent = $("#reagent");
+               var reagent = $reagent.val();
+               salt[2] = reagent;
+               
+               
+               var br = "35";
+               var bl = "35";
+               var width = "48";
+               var height = "30";
+               var y = 438;
+               var x = 551;
+
+            
+                
+               if(salt.includes("Na+") && salt.includes("Pot-Pyro")){
+
+                        fill(226,202,205);
+                        rect(x,y,width,height,0,0,br,bl);
+                                       
+                }
+                else if(salt.includes("Fe2+") && salt.includes("Pot-Ferro")){
+                                            
+                        fill(255,255,229);
+                        rect(x,y,width,height,0,0,br,bl);
+                }
+                    
+                else if(salt.includes("Fe2+") && salt.includes("Pot-Ferri")){
+                        
+                        fill(8,32,102);
+                        rect(x,y,width,height,0,0,br,bl);                                       
+                }
+                else if(salt.includes("Fe3+") && salt.includes("Pot-Ferri")){
+                                           
+                        fill(75,27,33);
+                        rect(x,y,width,height,0,0,br,bl);
+                }
+                else if(salt.includes("Fe3+") && salt.includes("Pot-Ferro")){
+                        
+                        fill(98,129,229);
+                        rect(x,y,width,height,0,0,br,bl);
+                }                   
+                
+                else if(salt.includes("Al3+") && salt.includes("Sod-Hyd")){
+                        
+                        fill(210,210,210);
+                        rect(x,y,width,height,0,0,br,bl);                                            
+                }
+                else if(salt.includes("NH4+") && salt.includes("Nes-Rea")){
+                                            
+                        fill(70,23,29);
+                        rect(x,y,width,height,0,0,br,bl);                   
+                }
+                else if(salt.includes("Cu2+") && salt.includes("Pot-Ferro")){
+                                
+                        fill(179,32,52);
+                        rect(x,y,width,height,0,0,br,bl);                  
+                    
+                }
+                else if(salt.includes("Zn2+") && salt.includes("Pot-Ferro")){
+                    
+                        fill(210,210,210);
+                        rect(x,y,width,height,0,0,br,bl);                   
+                    
+                }
+                else if(salt.includes("Ca2+") && salt.includes("Amm-Oxa")){
+
+                    fill(200,200,200);
+                    rect(x,y,width,height,0,0,br,bl);
+                }
+                else if(salt.includes("SO2-") && salt.includes("Lea-Ace")){
+
+                    fill(255,255,255);
+                    rect(x,y,width,height,0,0,br,bl);
+                }
+                else if(salt.includes("SO2-") && salt.includes("Bar-Nit")){
+
+                    fill(255,255,255);
+                    rect(x,y,width,height,0,0,br,bl);
+                }
+                else if(salt.includes("Cl-") && salt.includes("Sil-Nit")){
+                    
+                    fill(255,255,255);
+                    rect(x,y,width,height,0,0,br,bl);
+                }
+                else if(salt.includes("Cl-") && salt.includes("Lea-Ace")){
+
+                    fill(255,255,255);
+                    rect(x,y,width,height,0,0,br,bl);
+                }
+                else if(salt.includes("CO3-") && salt.includes("Hyd-Chl")){
+                    //I need to write a code here that makes bubbles
+                    fill(0,0,0);
+                    rect(x,y,width,height,0,0,br,bl);
+                }
+                else if(salt.includes("CO3-") && salt.includes("Bar-Nit")){
+
+                    fill(255,255,255);
+                    rect(x,y,width,height,0,0,br,bl);
+                }
+
+
+                
+            });
+
+            //This part gives you another clean solution
+
+            $("#another-button").on("click",function(){
+                fill(255,255,255);
+                rect(545+4,245+125,52,100,0,0,30,30);
+                salt[2] = "";
+                      
+            });
+
+            //This part takes the answer and gives your result
+
+            $("#result-form").on("submit",function(event){
+                event.preventDefault();
+                
+                var $positive_answer = $("#positive-answer");
+                var positive_answer = $positive_answer.val();
+                var $negative_answer = $("#negative-answer");
+                var negative_answer = $negative_answer.val();
+                if(positive_answer === salt[0] && negative_answer === salt[1]){
+                    $("#result").text("YOU GOT IT!! YAY!!!! Refresh the page to try again");
+                }
+                else{
+                    $("#result").text("Sorry. Better luck next time. =;.;=. Refresh the page and try again.");
+                }
+
+                
+            });
+
+           
+            
+            
+            
+
+            
+
+            
+            }
+            
+        };
+        var canvas = document.getElementById("playground");
+        var processingInstance = new Processing(canvas, sketchProc);
+    </script>
+    <script>
+      
+    </script>
+</html>
