@@ -14,9 +14,10 @@ data-driven virtual lab.
 - **Branch:** `modernize-p5-lab` (8 fine-grained commits, pushed to origin)
 - **Status:** NOT merged. Deliberately holding off — do not merge yet.
 - **`main` is untouched.**
-- **Stacked work:** branch `polish-and-difficulty` (base: `modernize-p5-lab`) adds the
-  polish items + the Easy/Hard difficulty system. See its PR (stacked on #1). Also NOT
-  merged — same review-at-your-own-pace hold.
+- **Stacked PR:** #2 — https://github.com/SiamRahman29/SaltExperiment/pull/2
+- **Branch:** `polish-and-difficulty` (base: `modernize-p5-lab`, 3 commits, pushed). Adds the
+  quick-polish items + the Easy/Hard difficulty system. Also NOT merged — same
+  review-at-your-own-pace hold. **This is the current tip of the stack** (`main` ← #1 ← #2).
 - **Design doc (the blueprint):**
   `~/.gstack/projects/SiamRahman29-SaltExperiment/siamrahman-main-design-20260616-154431.md`
   (Approved. Approach A: p5.js, zero build step, data-driven spine, lab-notebook framing.
@@ -27,24 +28,27 @@ data-driven virtual lab.
 
 ## How to start the next session
 
-Branch off the PR branch (NOT off main — the new work builds on PR #1):
+The stack is `main` ← #1 (`modernize-p5-lab`) ← #2 (`polish-and-difficulty`). The next
+feature stacks on the **current tip**, `polish-and-difficulty` — NOT off main, NOT off
+`modernize-p5-lab`:
 
 ```bash
 cd /e/Code/SaltExperiment
 git fetch origin
-git checkout modernize-p5-lab
+git checkout polish-and-difficulty
 git pull --ff-only
-git checkout -b <next-feature-name>     # e.g. flame-tests, or polish-and-difficulty
+git checkout -b <next-feature-name>     # e.g. flame-tests
 ```
 
-When that work is ready, open its PR with `--base modernize-p5-lab` (stacked on PR #1) so
-the two can be reviewed/merged in order:
+When that work is ready, open its PR with `--base polish-and-difficulty` (stacked on #2) so
+the three review/merge in order:
 
 ```bash
-gh pr create --base modernize-p5-lab --head <next-feature-name> --title "..." --body "..."
+gh pr create --base polish-and-difficulty --head <next-feature-name> --title "..." --body "..."
 ```
 
-Do not merge anything without the user's go-ahead. They want to review at their own pace.
+Do not merge anything without the user's go-ahead. They want to review at their own pace,
+bottom-up: #1 first, then #2, then this.
 
 ---
 
@@ -69,8 +73,15 @@ B=~/.claude/skills/gstack/browse/dist/browse
 "$B" screenshot "#stage canvas" /tmp/shot.png                  # capture the bench
 "$B" console --errors
 ```
-Gotcha learned: navigating to the same URL with only a changed `#hash` is a same-document
-nav — `init()` won't re-run. Always `reload` after seeding a salt via the hash.
+Gotchas learned:
+- Navigating to the same URL with only a changed `#hash` is a same-document nav — `init()`
+  won't re-run. Always `reload` after seeding a salt via the hash.
+- The browse tool writes screenshots to a Git-Bash path like `/tmp/shot.png`. To open it
+  with the Read tool, convert to a Windows path first: `cygpath -w /tmp/shot.png`
+  (e.g. `C:\Users\USER\AppData\Local\Temp\shot.png`).
+- `python -m http.server` is only a static file host so the browse tool has an `http://`
+  URL — the app is 100% static client-side JS (runs from `file://` too). Nothing dynamic;
+  no backend.
 
 ---
 
@@ -138,6 +149,6 @@ flagged during the build. Suggested order:
 ---
 
 ## This file
-`handoff.md` is a working note, currently untracked (not part of PR #1). Commit it to your
-next branch if you want it to travel with the work, or delete it once the next session is
-underway.
+`handoff.md` is a working note that now travels with the work — it's tracked on
+`polish-and-difficulty` (committed there, part of PR #2). Keep updating it at the end of
+each session and commit it to whatever branch you're on.
