@@ -20,19 +20,30 @@
 // `label` is the verbose dropdown text; `name` is the clean prose form used
 // when the app writes a salt's name in a sentence (e.g. "iron(III) chloride").
 // `clue` (coloured cations only) is the Easy-mode hint about the solution tint.
+// `flame` (cations) is the flame-test result: the colour the Bunsen flame takes
+// when the metal is heated on a nichrome wire, plus its prose. `flame: null`
+// means the metal gives no characteristic flame colour.
 const IONS = {
   // cations
-  "Na+":  { label: "Sodium",            name: "sodium",     formula: "Na⁺",   type: "cation", soln: [226, 236, 239] },
+  "Na+":  { label: "Sodium",            name: "sodium",     formula: "Na⁺",   type: "cation", soln: [226, 236, 239],
+             flame: { color: [255, 190, 60], name: "intense golden-yellow",
+               observation: "The flame blazes an intense golden-yellow — the unmistakable confirmatory flame test for sodium." } },
   "Fe2+": { label: "Ferrous (iron II)",  name: "iron(II)",  formula: "Fe²⁺", type: "cation", soln: [201, 226, 206], // very pale green
-             clue: "The solution has a faint green tint — a coloured cation, think iron(II)." },
+             clue: "The solution has a faint green tint — a coloured cation, think iron(II).",
+             flame: null },
   "Fe3+": { label: "Ferric (iron III)",  name: "iron(III)", formula: "Fe³⁺", type: "cation", soln: [221, 201, 150], // pale yellow-brown
-             clue: "The solution has a pale yellow-brown tint — a coloured cation, think iron(III)." },
+             clue: "The solution has a pale yellow-brown tint — a coloured cation, think iron(III).",
+             flame: null },
   "Cu2+": { label: "Cupric (copper II)", name: "copper(II)", formula: "Cu²⁺", type: "cation", soln: [150, 201, 225], // pale blue
-             clue: "The solution has a pale blue tint — a coloured cation, think copper(II)." },
-  "Zn2+": { label: "Zinc",              name: "zinc",       formula: "Zn²⁺", type: "cation", soln: [226, 236, 239] },
-  "Al3+": { label: "Aluminium",         name: "aluminium",  formula: "Al³⁺", type: "cation", soln: [226, 236, 239] },
-  "NH4+": { label: "Ammonium",          name: "ammonium",   formula: "NH₄⁺", type: "cation", soln: [226, 236, 239] },
-  "Ca2+": { label: "Calcium",           name: "calcium",    formula: "Ca²⁺", type: "cation", soln: [226, 236, 239] },
+             clue: "The solution has a pale blue tint — a coloured cation, think copper(II).",
+             flame: { color: [70, 205, 140], name: "green / blue-green",
+               observation: "The flame turns a vivid green to blue-green — the signature flame colour of copper(II)." } },
+  "Zn2+": { label: "Zinc",              name: "zinc",       formula: "Zn²⁺", type: "cation", soln: [226, 236, 239], flame: null },
+  "Al3+": { label: "Aluminium",         name: "aluminium",  formula: "Al³⁺", type: "cation", soln: [226, 236, 239], flame: null },
+  "NH4+": { label: "Ammonium",          name: "ammonium",   formula: "NH₄⁺", type: "cation", soln: [226, 236, 239], flame: null },
+  "Ca2+": { label: "Calcium",           name: "calcium",    formula: "Ca²⁺", type: "cation", soln: [226, 236, 239],
+             flame: { color: [220, 80, 48], name: "brick-red",
+               observation: "The flame glows a steady brick-red — the confirmatory flame test for calcium." } },
   // anions
   "SO4":  { label: "Sulphate",  name: "sulphate",  formula: "SO₄²⁻", type: "anion" },
   "CO3":  { label: "Carbonate", name: "carbonate", formula: "CO₃²⁻", type: "anion" },
@@ -207,8 +218,20 @@ function lookupReaction(salt, reagentKey) {
   return null;
 }
 
+/*
+ * The flame-test engine. Heating a salt on a nichrome wire probes the *cation*
+ * only. Returns the cation's flame entry ({color, name, observation}) or null
+ * when the metal gives no characteristic flame colour — a result that is still
+ * diagnostic (it rules out sodium, copper and calcium).
+ */
+function lookupFlame(salt) {
+  const cation = IONS[salt.cation];
+  return (cation && cation.flame) || null;
+}
+
 // expose as globals (no build step / no modules — keeps file:// + GH Pages happy)
 window.IONS = IONS;
 window.REAGENTS = REAGENTS;
 window.REACTIONS = REACTIONS;
 window.lookupReaction = lookupReaction;
+window.lookupFlame = lookupFlame;
