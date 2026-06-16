@@ -22,6 +22,10 @@
         <div class="score-bar">
           <span id="score">Solved 0 / 0 attempts</span>
           <span class="actions">
+            <span id="difficulty" class="difficulty" role="radiogroup" aria-label="Difficulty">
+              <button id="diff-easy" class="seg" type="button" role="radio" aria-checked="true">Easy</button>
+              <button id="diff-hard" class="seg" type="button" role="radio" aria-checked="false">Hard</button>
+            </span>
             <button id="new-btn" class="ghost" type="button">New unknown</button>
             <button id="share-btn" class="ghost" type="button">Share challenge</button>
           </span>
@@ -41,6 +45,7 @@
             <button id="add-btn" type="button">Add to sample</button>
             <button id="fresh-btn" class="secondary" type="button">Fresh sample</button>
           </div>
+          <p id="tests-left" class="tests-left" role="status"></p>
         </section>
 
         <!-- live explanation of the latest reaction -->

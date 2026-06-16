@@ -17,20 +17,26 @@
  */
 
 // ---- Ions the unknown salt can be made of -------------------------------
+// `label` is the verbose dropdown text; `name` is the clean prose form used
+// when the app writes a salt's name in a sentence (e.g. "iron(III) chloride").
+// `clue` (coloured cations only) is the Easy-mode hint about the solution tint.
 const IONS = {
   // cations
-  "Na+":  { label: "Sodium",           formula: "Na⁺",   type: "cation", soln: [226, 236, 239] },
-  "Fe2+": { label: "Ferrous (iron II)", formula: "Fe²⁺", type: "cation", soln: [201, 226, 206] }, // very pale green
-  "Fe3+": { label: "Ferric (iron III)", formula: "Fe³⁺", type: "cation", soln: [221, 201, 150] }, // pale yellow-brown
-  "Cu2+": { label: "Cupric (copper II)", formula: "Cu²⁺", type: "cation", soln: [150, 201, 225] }, // pale blue
-  "Zn2+": { label: "Zinc",             formula: "Zn²⁺", type: "cation", soln: [226, 236, 239] },
-  "Al3+": { label: "Aluminium",        formula: "Al³⁺", type: "cation", soln: [226, 236, 239] },
-  "NH4+": { label: "Ammonium",         formula: "NH₄⁺", type: "cation", soln: [226, 236, 239] },
-  "Ca2+": { label: "Calcium",          formula: "Ca²⁺", type: "cation", soln: [226, 236, 239] },
+  "Na+":  { label: "Sodium",            name: "sodium",     formula: "Na⁺",   type: "cation", soln: [226, 236, 239] },
+  "Fe2+": { label: "Ferrous (iron II)",  name: "iron(II)",  formula: "Fe²⁺", type: "cation", soln: [201, 226, 206], // very pale green
+             clue: "The solution has a faint green tint — a coloured cation, think iron(II)." },
+  "Fe3+": { label: "Ferric (iron III)",  name: "iron(III)", formula: "Fe³⁺", type: "cation", soln: [221, 201, 150], // pale yellow-brown
+             clue: "The solution has a pale yellow-brown tint — a coloured cation, think iron(III)." },
+  "Cu2+": { label: "Cupric (copper II)", name: "copper(II)", formula: "Cu²⁺", type: "cation", soln: [150, 201, 225], // pale blue
+             clue: "The solution has a pale blue tint — a coloured cation, think copper(II)." },
+  "Zn2+": { label: "Zinc",              name: "zinc",       formula: "Zn²⁺", type: "cation", soln: [226, 236, 239] },
+  "Al3+": { label: "Aluminium",         name: "aluminium",  formula: "Al³⁺", type: "cation", soln: [226, 236, 239] },
+  "NH4+": { label: "Ammonium",          name: "ammonium",   formula: "NH₄⁺", type: "cation", soln: [226, 236, 239] },
+  "Ca2+": { label: "Calcium",           name: "calcium",    formula: "Ca²⁺", type: "cation", soln: [226, 236, 239] },
   // anions
-  "SO4":  { label: "Sulphate",  formula: "SO₄²⁻", type: "anion" },
-  "CO3":  { label: "Carbonate", formula: "CO₃²⁻", type: "anion" },
-  "Cl":   { label: "Chloride",  formula: "Cl⁻",             type: "anion" },
+  "SO4":  { label: "Sulphate",  name: "sulphate",  formula: "SO₄²⁻", type: "anion" },
+  "CO3":  { label: "Carbonate", name: "carbonate", formula: "CO₃²⁻", type: "anion" },
+  "Cl":   { label: "Chloride",  name: "chloride",  formula: "Cl⁻",   type: "anion" },
 };
 
 // ---- Reagents on the bench ----------------------------------------------

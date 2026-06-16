@@ -70,7 +70,31 @@ body {
   color: #cfe6ea;
   font-size: 0.92rem;
 }
-.score-bar .actions { display: flex; gap: 10px; }
+.score-bar .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* difficulty segmented toggle */
+.difficulty {
+  display: inline-flex;
+  border: 1px solid #4a6b74;
+  border-radius: 9px;
+  overflow: hidden;
+}
+.difficulty .seg {
+  flex: 0 0 auto;
+  background: transparent;
+  color: #cfe6ea;
+  border: none;
+  border-radius: 0;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.difficulty .seg:hover { background: rgba(255, 255, 255, 0.08); }
+.difficulty .seg.active {
+  background: var(--accent);
+  color: #fff;
+}
+.difficulty .seg.active:hover { background: var(--accent); }
 
 .panel {
   flex: 1 1 340px;
@@ -108,6 +132,15 @@ select {
   color: var(--text);
   width: 100%;
 }
+
+.tests-left {
+  margin: 12px 0 0;
+  font-size: 0.84rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.tests-left:empty { display: none; }
+.tests-left.spent { color: var(--no); }
 
 .btn-row { display: flex; flex-wrap: wrap; gap: 10px; }
 button {
