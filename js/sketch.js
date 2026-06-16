@@ -263,7 +263,9 @@ const sketch = (p) => {
         s: p.random(2.5, 5),
         c: color,
         a: 0,
-        v: p.random(0.4, 1.1),
+        v: p.random(0.3, 0.7),          // starting fall speed (then accelerates)
+        drift: p.random(p.TWO_PI),      // phase for the lazy sideways sway
+        wobble: 0,                      // settle shudder, decays to rest
         settled: false,
       });
     }
@@ -273,9 +275,22 @@ const sketch = (p) => {
     for (const pt of SimState.particles) {
       if (pt.a < 220) pt.a += 6;            // fade in
       if (!pt.settled) {
-        pt.y += pt.v;
-        pt.x += (pt.targetX - pt.x) * 0.02;
-        if (pt.y >= pt.targetY) { pt.y = pt.targetY; pt.settled = true; }
+        const dist = pt.targetY - pt.y;
+        pt.v += 0.045;                       // gentle gravity, so the fall accelerates
+        // decelerate into the heap: cap the step as the particle nears its rest spot
+        const step = Math.min(pt.v, Math.max(0.35, dist * 0.14));
+        pt.y += step;
+        // lazy sideways sway while sinking, plus a pull toward the target column
+        pt.x += (pt.targetX - pt.x) * 0.03 + Math.sin((p.frameCount + pt.drift * 9) * 0.06) * 0.25;
+        if (dist <= 0.8) {
+          pt.y = pt.targetY;
+          pt.settled = true;
+          pt.wobble = p.random(0.6, 1.4);    // little shudder as it lands in the sediment
+        }
+      } else if (pt.wobble > 0.01) {
+        // brief settle shudder that decays — reads like specks jostling into the heap
+        pt.y = pt.targetY + Math.sin(p.frameCount * 0.5 + pt.drift) * pt.wobble;
+        pt.wobble *= 0.88;
       }
     }
   }
