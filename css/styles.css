@@ -96,6 +96,28 @@ body {
 }
 .difficulty .seg.active:hover { background: var(--accent); }
 
+/* station segmented toggle (reagent vs flame), inside a light card */
+.station-toggle {
+  display: flex;
+  border: 1px solid var(--panel-border);
+  border-radius: 9px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.station-toggle .seg {
+  flex: 1 1 0;
+  background: #f1f6f7;
+  color: var(--muted);
+  border: none;
+  border-radius: 0;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.station-toggle .seg:hover { background: #e6eef0; }
+.station-toggle .seg.active,
+.station-toggle .seg.active:hover { background: var(--accent); color: #fff; }
+
 .panel {
   flex: 1 1 340px;
   min-width: 290px;

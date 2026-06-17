@@ -19,7 +19,8 @@
     solved: false,
     tests: 0,
     notebook: [],
-    difficulty: "easy", // "easy" | "hard"
+    difficulty: "easy",  // "easy" | "hard"
+    station: "reagent",  // "reagent" | "flame"
   };
 
   // ---- salt selection / URL seed -----------------------------------------
@@ -106,15 +107,35 @@
     });
   }
 
+  // ---- run a flame test --------------------------------------------------
+  // Heating on a nichrome wire probes the cation only. Counts against the same
+  // Hard-mode budget as a reagent test — it's one more move in the deduction.
+  function runFlameTest() {
+    if (!window.Lab || window.Lab.isBusy()) return;
+    if (testsExhausted()) return;
+    const flame = lookupFlame(state.salt);
+    state.tests++;
+
+    setControlsDisabled(true);
+    window.Lab.flameTest(flame, () => {
+      logFlame(flame);
+      setControlsDisabled(false);
+      updateTestGate();
+    });
+  }
+
   // ---- difficulty: hints (Easy) + a test budget (Hard) -------------------
   function testsExhausted() {
     return state.difficulty === "hard" && state.tests >= HARD_TEST_LIMIT;
   }
 
-  // In Hard mode the "Add to sample" button locks once the budget is spent.
+  // In Hard mode the test buttons lock once the budget is spent.
   // Always run after toggling controls so the gate wins over a blanket re-enable.
   function updateTestGate() {
-    if (testsExhausted() && !window.Lab.isBusy()) $("add-btn").disabled = true;
+    if (testsExhausted() && !window.Lab.isBusy()) {
+      $("add-btn").disabled = true;
+      $("flame-btn").disabled = true;
+    }
     renderTestsLeft();
   }
 
@@ -148,9 +169,30 @@
     $("diff-easy").classList.toggle("active", state.difficulty === "easy");
     $("diff-hard").classList.toggle("active", state.difficulty === "hard");
     // re-apply the gate, and refresh the observe-first clue if the bench is untouched
-    if (!window.Lab || !window.Lab.isBusy()) $("add-btn").disabled = false;
+    if (!window.Lab || !window.Lab.isBusy()) {
+      $("add-btn").disabled = false;
+      $("flame-btn").disabled = false;
+    }
     updateTestGate();
     if (fromUser && !state.solved && state.notebook.length === 0) renderObservePrompt();
+  }
+
+  // ---- stations: switch the bench between the reagent tube and the burner --
+  function setStation(name, fromUser) {
+    if (fromUser && window.Lab && window.Lab.isBusy()) return; // don't switch mid-test
+    state.station = name === "flame" ? "flame" : "reagent";
+    const flame = state.station === "flame";
+    $("station-flame").setAttribute("aria-checked", String(flame));
+    $("station-reagent").setAttribute("aria-checked", String(!flame));
+    $("station-flame").classList.toggle("active", flame);
+    $("station-reagent").classList.toggle("active", !flame);
+    $("flame-station").hidden = !flame;
+    $("reagent-station").hidden = flame;
+    if (window.Lab) {
+      window.Lab.setStation(flame ? "flame" : "tube");
+      if (flame) window.Lab.loadReagent(null);
+      else loadSelectedReagent();
+    }
   }
 
   // The opening "Observe first" panel — Easy adds the solution-colour clue.
@@ -189,6 +231,26 @@
       ? reaction.observation
       : `No visible change with ${reagent.label}.`;
     state.notebook.push({ reagent: reagent.label, obs });
+    renderNotebook();
+  }
+
+  function logFlame(flame) {
+    const explain = $("explain");
+    if (flame) {
+      explain.innerHTML = `
+        <div class="explain-head">Flame test · ${cap(flame.name)}</div>
+        <p class="explain-obs">${flame.observation}</p>`;
+      explain.className = "explain active";
+    } else {
+      explain.innerHTML = `
+        <div class="explain-head">Flame test · no characteristic colour</div>
+        <p class="explain-obs">The flame stays its normal blue — this metal has no flame colour. A negative result still narrows it down: it rules out sodium, copper and calcium.</p>`;
+      explain.className = "explain active muted";
+    }
+    const obs = flame
+      ? `Flame test — ${flame.observation}`
+      : "Flame test — no characteristic flame colour (rules out sodium, copper, calcium).";
+    state.notebook.push({ reagent: "Flame test", obs });
     renderNotebook();
   }
 
@@ -278,6 +340,7 @@
     $("result").textContent = "";
     $("result").className = "result";
     $("add-btn").disabled = false;
+    $("flame-btn").disabled = false;
     renderObservePrompt();
     renderNotebook();
     renderTestsLeft();
@@ -307,6 +370,7 @@
   function setControlsDisabled(d) {
     $("add-btn").disabled = d;
     $("fresh-btn").disabled = d;
+    $("flame-btn").disabled = d;
   }
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
@@ -327,12 +391,16 @@
     $("reagent-select").addEventListener("change", loadSelectedReagent);
     $("add-btn").addEventListener("click", runTest);
     $("fresh-btn").addEventListener("click", freshSample);
+    $("flame-btn").addEventListener("click", runFlameTest);
     $("identify-form").addEventListener("submit", identify);
     $("new-btn").addEventListener("click", newChallenge);
     $("share-btn").addEventListener("click", shareChallenge);
     $("diff-easy").addEventListener("click", () => setDifficulty("easy", true));
     $("diff-hard").addEventListener("click", () => setDifficulty("hard", true));
+    $("station-reagent").addEventListener("click", () => setStation("reagent", true));
+    $("station-flame").addEventListener("click", () => setStation("flame", true));
 
+    setStation("reagent", false);
     loadSalt(saltFromHash() || randomSalt(), false);
   }
 

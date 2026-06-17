@@ -17,7 +17,11 @@ data-driven virtual lab.
 - **Stacked PR:** #2 — https://github.com/SiamRahman29/SaltExperiment/pull/2
 - **Branch:** `polish-and-difficulty` (base: `modernize-p5-lab`, 3 commits, pushed). Adds the
   quick-polish items + the Easy/Hard difficulty system. Also NOT merged — same
-  review-at-your-own-pace hold. **This is the current tip of the stack** (`main` ← #1 ← #2).
+  review-at-your-own-pace hold.
+- **Stacked PR:** #3 (to open) — branch `flame-tests` (base: `polish-and-difficulty`). Adds
+  the flame-test station: a Bunsen burner second scene on the bench. **This is the current
+  tip of the stack** (`main` ← #1 ← #2 ← #3). Committed locally; push + `gh pr create
+  --base polish-and-difficulty` when ready (not done unprompted — outward-facing).
 - **Design doc (the blueprint):**
   `~/.gstack/projects/SiamRahman29-SaltExperiment/siamrahman-main-design-20260616-154431.md`
   (Approved. Approach A: p5.js, zero build step, data-driven spine, lab-notebook framing.
@@ -28,27 +32,28 @@ data-driven virtual lab.
 
 ## How to start the next session
 
-The stack is `main` ← #1 (`modernize-p5-lab`) ← #2 (`polish-and-difficulty`). The next
-feature stacks on the **current tip**, `polish-and-difficulty` — NOT off main, NOT off
-`modernize-p5-lab`:
+The stack is `main` ← #1 (`modernize-p5-lab`) ← #2 (`polish-and-difficulty`) ←
+`flame-tests`. The next feature stacks on the **current tip**, `flame-tests` — NOT off main:
 
 ```bash
 cd /e/Code/SaltExperiment
 git fetch origin
-git checkout polish-and-difficulty
-git pull --ff-only
-git checkout -b <next-feature-name>     # e.g. flame-tests
+git checkout flame-tests
+git pull --ff-only      # only if flame-tests has been pushed
+git checkout -b <next-feature-name>     # e.g. gas-tests
 ```
 
-When that work is ready, open its PR with `--base polish-and-difficulty` (stacked on #2) so
-the three review/merge in order:
+When that work is ready, open its PR with `--base flame-tests` (stacked) so they review/merge
+in order:
 
 ```bash
-gh pr create --base polish-and-difficulty --head <next-feature-name> --title "..." --body "..."
+gh pr create --base flame-tests --head <next-feature-name> --title "..." --body "..."
 ```
 
 Do not merge anything without the user's go-ahead. They want to review at their own pace,
-bottom-up: #1 first, then #2, then this.
+bottom-up: #1 first, then #2, then flame-tests, then this. `flame-tests` is committed
+locally but not yet pushed — push it + open its PR (`--base polish-and-difficulty`) when the
+user gives the word.
 
 ---
 
@@ -123,13 +128,25 @@ flagged during the build. Suggested order:
 - Best-score tracking: leanest winning solve ("best N tests") in the score bar, persisted
   (`readScore()` is back-compat with the old `{solved, attempts}` shape).
 
-### 3. Full lab bench (the big one — "Full bench" pillar from office hours) — STILL OPEN
-- **Flame tests** as a second interaction (Na+ yellow, Cu2+ green/blue, Ca2+ brick-red,
-  etc.). New interaction surface + new data in `reactions.js` (a `flame` field per cation).
+### 3. Full lab bench (the big one — "Full bench" pillar from office hours) — IN PROGRESS
+- **Flame tests** — ✅ DONE (branch `flame-tests`). A second station on the bench:
+  - `flame` field per cation in `reactions.js` (`{color, name, observation}`, or `null` for
+    no characteristic colour). Engine helper `lookupFlame(salt)` mirrors `lookupReaction`.
+    Coloured flames: Na⁺ golden-yellow, Cu²⁺ green/blue-green, Ca²⁺ brick-red. The rest are
+    `null` (genuinely diagnostic — a null result rules those three out).
+  - `sketch.js` now has a **station concept**: `SimState.station` is `"tube"` | `"flame"`,
+    and `p.draw()` branches on it. The flame scene draws a Bunsen burner with a layered,
+    flickering, emissive flame (uses `p.blendMode(SCREEN)`) and a nichrome wire that dips in
+    with a glowing salt bead. New Lab API: `setStation(name)`, `flameTest(flame, onDone)`;
+    `isBusy()` and `freshSample()` are flame-aware.
+  - UI: a segmented **Reagent test / Flame test** toggle at the top of the Step 1 card swaps
+    `#reagent-station` / `#flame-station`. `app.js` `setStation()` drives it; `runFlameTest()`
+    runs the test, logs to the notebook + explain panel. Flame tests **count against the
+    Hard-mode budget** (both test buttons lock when spent). Station switch is blocked
+    mid-test. Verified via the browse tool (Na gold, Cu green, Zn null, budget, guards).
 - Heating a tube / gas tests (e.g. warming for the NH4+ + NaOH ammonia smell, which is
-  already in the data as `gas: true` but has no dedicated visual).
-- These are new "stations." Consider how `sketch.js` switches scenes — may want a small
-  station/scene concept rather than one hardcoded tube.
+  already in the data as `gas: true` but has no dedicated visual) — STILL OPEN. The station
+  concept is now in place, so this is a third scene rather than a refactor.
 
 ### Design-doc open questions still live
 - p5 via vendored file (done) vs CDN — kept vendored.

@@ -19,10 +19,17 @@ const SimState = {
   bubbles: [],                // gas bubbles
   onDone: null,               // callback fired once when a reaction finishes
   flash: 0,                   // brief glow when a reaction completes
+  // ---- flame station ----
+  station: "tube",            // "tube" (reagent bench) | "flame" (Bunsen burner)
+  flameColor: null,           // characteristic colour while a wire is in the flame
+  flamePhase: "idle",         // idle | testing
+  flameStart: 0,
+  flameOnDone: null,
 };
 
 const POUR_MS = 900;
 const REACT_MS = 2200;
+const FLAME_MS = 2800;
 
 const sketch = (p) => {
   // logical canvas; CSS scales it down responsively
@@ -34,6 +41,10 @@ const sketch = (p) => {
   const liquidTop = () => TUBE.top + TUBE.h * 0.40;
   const liquidBottom = () => TUBE.top + TUBE.h - wallpad - 4;
 
+  // Bunsen-burner geometry for the flame station. Shares the tube's column so
+  // the two stations read as the same bench seen from different tools.
+  const BURNER = { cx: 360, baseY: H - 96, barrelTop: H - 96 - 150, barrelW: 16 };
+
   p.setup = () => {
     const c = p.createCanvas(W, H);
     c.parent("stage");
@@ -43,9 +54,14 @@ const sketch = (p) => {
 
   p.draw = () => {
     drawBench();
-    advance();
-    drawSampleTube();
-    drawDropper();
+    if (SimState.station === "flame") {
+      advanceFlame();
+      drawFlameStation();
+    } else {
+      advance();
+      drawSampleTube();
+      drawDropper();
+    }
     drawCaption();
   };
 
@@ -196,8 +212,13 @@ const sketch = (p) => {
     p.textAlign(p.CENTER, p.CENTER);
     p.textSize(15);
     let msg = "Unknown sample";
-    if (SimState.phase === "pouring") msg = "Adding reagent…";
-    else if (SimState.phase === "reacting") msg = "Reacting…";
+    if (SimState.station === "flame") {
+      msg = SimState.flamePhase === "testing" ? "Heating in the flame…" : "Flame test — dip the wire and heat";
+    } else if (SimState.phase === "pouring") {
+      msg = "Adding reagent…";
+    } else if (SimState.phase === "reacting") {
+      msg = "Reacting…";
+    }
     p.text(msg, TUBE.cx, TUBE.top + TUBE.h + 26);
   }
 
@@ -320,6 +341,124 @@ const sketch = (p) => {
     }
   }
 
+  // ---- flame station: Bunsen burner + nichrome wire -----------------------
+  function advanceFlame() {
+    if (SimState.flamePhase === "testing" && p.millis() - SimState.flameStart >= FLAME_MS) {
+      finishFlame();
+    }
+  }
+
+  function finishFlame() {
+    SimState.flamePhase = "idle";
+    SimState.flameColor = null;   // wire lifts out — flame returns to plain blue
+    SimState.flash = 1;
+    if (typeof SimState.flameOnDone === "function") {
+      const cb = SimState.flameOnDone;
+      SimState.flameOnDone = null;
+      cb();
+    }
+  }
+
+  function drawFlameStation() {
+    const cx = BURNER.cx;
+    const baseY = BURNER.baseY;
+
+    // burner: weighted foot, slim barrel, collar
+    p.noStroke();
+    p.fill(30, 44, 50);
+    p.ellipse(cx, baseY - 2, 120, 22);
+    p.fill(46, 62, 70);
+    p.rect(cx - BURNER.barrelW / 2, BURNER.barrelTop, BURNER.barrelW, baseY - BURNER.barrelTop - 6, 3);
+    p.fill(70, 88, 96);
+    p.rect(cx - BURNER.barrelW / 2 - 3, BURNER.barrelTop - 5, BURNER.barrelW + 6, 9, 2); // collar
+    // air-hole shadow on the collar
+    p.fill(20, 30, 34);
+    p.ellipse(cx, BURNER.barrelTop - 1, 5, 5);
+
+    // is the wire (and its glowing salt) in the flame right now?
+    const testing = SimState.flamePhase === "testing";
+    const t = testing ? clamp((p.millis() - SimState.flameStart) / FLAME_MS, 0, 1) : 0;
+    // characteristic colour eases in, holds, eases back out over the test
+    const tint = testing ? Math.sin(Math.min(t / 0.18, 1) * (Math.PI / 2)) * (t > 0.85 ? (1 - t) / 0.15 : 1) : 0;
+
+    drawFlame(cx, BURNER.barrelTop - 2, SimState.flameColor, clamp(tint, 0, 1));
+
+    if (testing) drawWire(cx, BURNER.barrelTop - 2);
+  }
+
+  // A layered, flickering flame. Plain roaring-Bunsen blue by default; `mix`
+  // (0..1) blends in the characteristic salt colour `tintCol`.
+  function drawFlame(cx, baseY, tintCol, mix) {
+    const blue = [110, 165, 235];
+    const outer = tintCol ? lerpRGB(blue, tintCol, mix) : blue;
+    const baseH = 132 + mix * 46;        // the flame leaps taller when it colours up
+    const fc = p.frameCount;
+
+    p.push();
+    p.noStroke();
+    p.blendMode(p.SCREEN);   // flames are emissive — add light rather than paint over
+
+    // soft halo of light around the flame
+    const halo = tintCol ? lerpRGB([60, 110, 200], tintCol, mix) : [60, 110, 200];
+    for (let i = 4; i > 0; i--) {
+      p.fill(halo[0], halo[1], halo[2], 10);
+      p.ellipse(cx, baseY - baseH * 0.45, 70 + i * 22, baseH + i * 26);
+    }
+
+    // three nested flame bodies: broad outer, mid, bright inner cone
+    flameBody(cx, baseY, baseH, 46, outer, 120, fc * 0.06, 1.0);
+    flameBody(cx, baseY, baseH * 0.74, 30, lerpRGB(outer, [240, 245, 255], 0.35), 150, fc * 0.08 + 11, 1.3);
+    // inner cone keeps a hot blue-white heart even when the flame is coloured
+    flameBody(cx, baseY, baseH * 0.42, 16, [180, 215, 255], 190, fc * 0.11 + 23, 1.6);
+    p.pop();
+  }
+
+  // One flame teardrop, flickering via sine wobble on its tip and waist.
+  function flameBody(cx, baseY, h, w, col, alpha, seed, flick) {
+    const tip = Math.sin(seed) * 8 * flick + Math.sin(seed * 1.7) * 4;
+    const lean = Math.sin(seed * 0.5) * 5;
+    const hv = h + Math.sin(seed * 0.9) * 10 * flick;
+    p.fill(col[0], col[1], col[2], alpha);
+    p.beginShape();
+    p.vertex(cx - w / 2, baseY);
+    p.bezierVertex(cx - w / 2 - 3, baseY - hv * 0.4,
+                   cx - w * 0.36 + lean, baseY - hv * 0.78,
+                   cx + tip, baseY - hv);
+    p.bezierVertex(cx + w * 0.36 + lean, baseY - hv * 0.78,
+                   cx + w / 2 + 3, baseY - hv * 0.4,
+                   cx + w / 2, baseY);
+    p.endShape(p.CLOSE);
+  }
+
+  // The nichrome wire on its handle, dipping in from the upper right with a
+  // glowing bead of sample at the loop, held in the hottest part of the flame.
+  function drawWire(cx, flameBaseY) {
+    const tipX = cx, tipY = flameBaseY - 70;   // loop sits in the flame's hot zone
+    const handleX = cx + 150, handleY = 70;
+    p.push();
+    // insulated handle
+    p.stroke(40, 30, 26);
+    p.strokeWeight(9);
+    p.line(handleX, handleY, handleX - 28, handleY + 26);
+    // the wire, bending down into the flame
+    p.noFill();
+    p.stroke(150, 150, 160);
+    p.strokeWeight(2.2);
+    p.beginShape();
+    p.vertex(handleX - 28, handleY + 26);
+    p.bezierVertex(handleX - 80, handleY + 40, tipX + 70, tipY - 40, tipX, tipY);
+    p.endShape();
+    // glowing bead of salt at the loop
+    p.noStroke();
+    const glow = SimState.flameColor || [255, 160, 90];
+    p.blendMode(p.SCREEN);
+    p.fill(glow[0], glow[1], glow[2], 200);
+    p.ellipse(tipX, tipY, 9, 9);
+    p.fill(255, 240, 220, 150);
+    p.ellipse(tipX, tipY, 4, 4);
+    p.pop();
+  }
+
   // ---- small helpers -------------------------------------------------------
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
@@ -347,6 +486,19 @@ const sketch = (p) => {
       SimState.phase = "pouring";
       SimState.phaseStart = p.millis();
     },
+    // switch the bench between the reagent tube and the Bunsen burner
+    setStation(name) {
+      SimState.station = name === "flame" ? "flame" : "tube";
+      SimState.flash = 0;
+    },
+    // run a flame test: heat the sample on a nichrome wire. `flame` may be null
+    // (no characteristic colour — the flame just stays blue).
+    flameTest(flame, onDone) {
+      SimState.flameColor = flame ? flame.color.slice() : null;
+      SimState.flameOnDone = onDone;
+      SimState.flamePhase = "testing";
+      SimState.flameStart = p.millis();
+    },
     // wipe back to a clean unknown
     freshSample(rgb) {
       SimState.baseColor = rgb.slice();
@@ -355,9 +507,14 @@ const sketch = (p) => {
       SimState.bubbles = [];
       SimState.reaction = null;
       SimState.phase = "idle";
+      SimState.flameColor = null;
+      SimState.flamePhase = "idle";
       SimState.flash = 0;
     },
-    isBusy() { return SimState.phase === "pouring" || SimState.phase === "reacting"; },
+    isBusy() {
+      return SimState.phase === "pouring" || SimState.phase === "reacting" ||
+             SimState.flamePhase === "testing";
+    },
   };
 };
 

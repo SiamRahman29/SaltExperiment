@@ -33,18 +33,35 @@
       </section>
 
       <aside class="panel">
-        <!-- Step 1: test with a reagent -->
+        <!-- Step 1: test — either a wet reagent test or a flame test -->
         <section class="card">
           <h2>Step 1 · Test</h2>
-          <p class="step">Choose a reagent and add it to the sample. Watch what happens.</p>
-          <div class="field">
-            <label for="reagent-select">Reagent</label>
-            <select id="reagent-select"></select>
+          <div id="station-toggle" class="station-toggle" role="radiogroup" aria-label="Test type">
+            <button id="station-reagent" class="seg active" type="button" role="radio" aria-checked="true">Reagent test</button>
+            <button id="station-flame" class="seg" type="button" role="radio" aria-checked="false">Flame test</button>
           </div>
-          <div class="btn-row">
-            <button id="add-btn" type="button">Add to sample</button>
-            <button id="fresh-btn" class="secondary" type="button">Fresh sample</button>
+
+          <!-- reagent station -->
+          <div id="reagent-station">
+            <p class="step">Choose a reagent and add it to the sample. Watch what happens.</p>
+            <div class="field">
+              <label for="reagent-select">Reagent</label>
+              <select id="reagent-select"></select>
+            </div>
+            <div class="btn-row">
+              <button id="add-btn" type="button">Add to sample</button>
+              <button id="fresh-btn" class="secondary" type="button">Fresh sample</button>
+            </div>
           </div>
+
+          <!-- flame station -->
+          <div id="flame-station" hidden>
+            <p class="step">Dip a clean nichrome wire in the sample and hold it in the Bunsen flame. The colour fingerprints the metal — but only some metals show one.</p>
+            <div class="btn-row">
+              <button id="flame-btn" type="button">Heat in flame</button>
+            </div>
+          </div>
+
           <p id="tests-left" class="tests-left" role="status"></p>
         </section>
 
