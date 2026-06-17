@@ -10,11 +10,16 @@
 
   const $ = (id) => document.getElementById(id);
 
+  // In Hard mode you get a limited number of tests before you must commit to an
+  // identification — it forces you to read clues and choose reagents deliberately.
+  const HARD_TEST_LIMIT = 5;
+
   const state = {
     salt: { cation: null, anion: null },
     solved: false,
     tests: 0,
     notebook: [],
+    difficulty: "easy", // "easy" | "hard"
   };
 
   // ---- salt selection / URL seed -----------------------------------------
@@ -86,6 +91,7 @@
   // ---- run a test --------------------------------------------------------
   function runTest() {
     if (!window.Lab || window.Lab.isBusy()) return;
+    if (testsExhausted()) return;
     const key = $("reagent-select").value;
     const reagent = REAGENTS[key];
     const reaction = lookupReaction(state.salt, key);
@@ -96,7 +102,70 @@
     window.Lab.addReagent(reaction, () => {
       logResult(reagent, reaction);
       setControlsDisabled(false);
+      updateTestGate();
     });
+  }
+
+  // ---- difficulty: hints (Easy) + a test budget (Hard) -------------------
+  function testsExhausted() {
+    return state.difficulty === "hard" && state.tests >= HARD_TEST_LIMIT;
+  }
+
+  // In Hard mode the "Add to sample" button locks once the budget is spent.
+  // Always run after toggling controls so the gate wins over a blanket re-enable.
+  function updateTestGate() {
+    if (testsExhausted() && !window.Lab.isBusy()) $("add-btn").disabled = true;
+    renderTestsLeft();
+  }
+
+  function renderTestsLeft() {
+    const el = $("tests-left");
+    if (state.difficulty !== "hard") {
+      el.textContent = "";
+      el.className = "tests-left";
+      return;
+    }
+    const left = Math.max(0, HARD_TEST_LIMIT - state.tests);
+    if (left === 0) {
+      el.textContent = "Out of tests — make your identification.";
+      el.className = "tests-left spent";
+    } else {
+      el.textContent = `Hard mode · ${left} test${left === 1 ? "" : "s"} left`;
+      el.className = "tests-left";
+    }
+  }
+
+  function readDifficulty() {
+    const d = localStorage.getItem("salt-difficulty");
+    return d === "hard" ? "hard" : "easy";
+  }
+
+  function setDifficulty(d, fromUser) {
+    state.difficulty = d === "hard" ? "hard" : "easy";
+    localStorage.setItem("salt-difficulty", state.difficulty);
+    $("diff-easy").setAttribute("aria-checked", String(state.difficulty === "easy"));
+    $("diff-hard").setAttribute("aria-checked", String(state.difficulty === "hard"));
+    $("diff-easy").classList.toggle("active", state.difficulty === "easy");
+    $("diff-hard").classList.toggle("active", state.difficulty === "hard");
+    // re-apply the gate, and refresh the observe-first clue if the bench is untouched
+    if (!window.Lab || !window.Lab.isBusy()) $("add-btn").disabled = false;
+    updateTestGate();
+    if (fromUser && !state.solved && state.notebook.length === 0) renderObservePrompt();
+  }
+
+  // The opening "Observe first" panel — Easy adds the solution-colour clue.
+  function renderObservePrompt() {
+    const explain = $("explain");
+    let body =
+      "Look at the colour of the unknown solution — coloured ions leave a clue. Then run reagent tests and read each result here.";
+    if (state.difficulty === "easy") {
+      const clue = IONS[state.salt.cation] && IONS[state.salt.cation].clue;
+      body = clue
+        ? `<strong>Hint:</strong> ${clue} Run reagent tests to pin down the rest.`
+        : "The solution is colourless — that already rules out the coloured ions (iron and copper). Run reagent tests to identify it.";
+    }
+    explain.className = "explain";
+    explain.innerHTML = `<div class="explain-head">Observe first</div><p class="explain-obs">${body}</p>`;
   }
 
   function logResult(reagent, reaction) {
@@ -152,14 +221,14 @@
     const right = cat === state.salt.cation && an === state.salt.anion;
     if (right) {
       state.solved = true;
-      bumpScore(true);
-      const name = `${IONS[state.salt.cation].label} ${IONS[state.salt.anion].label.toLowerCase()}`;
+      bumpScore(true, state.tests);
+      const name = `${IONS[state.salt.cation].name} ${IONS[state.salt.anion].name}`;
       result.innerHTML = `✓ Correct! The unknown was <strong>${name}</strong>
         (${IONS[state.salt.cation].formula} / ${IONS[state.salt.anion].formula}),
         solved in ${state.tests} test${state.tests === 1 ? "" : "s"}.`;
       result.className = "result ok";
     } else {
-      bumpScore(false);
+      bumpScore(false, state.tests);
       // partial feedback without giving it away
       const catOk = cat === state.salt.cation;
       const anOk = an === state.salt.anion;
@@ -172,20 +241,29 @@
   }
 
   // ---- score (persists across sessions) ----------------------------------
-  function bumpScore(correct) {
+  function bumpScore(correct, tests) {
     const s = readScore();
-    if (correct) s.solved++;
+    if (correct) {
+      s.solved++;
+      // record the leanest winning solve — fewest tests to a correct ID
+      if (s.best === null || tests < s.best) s.best = tests;
+    }
     s.attempts++;
     localStorage.setItem("salt-score", JSON.stringify(s));
     renderScore();
   }
   function readScore() {
-    try { return JSON.parse(localStorage.getItem("salt-score")) || { solved: 0, attempts: 0 }; }
-    catch (_) { return { solved: 0, attempts: 0 }; }
+    let s;
+    try { s = JSON.parse(localStorage.getItem("salt-score")); }
+    catch (_) { s = null; }
+    if (!s || typeof s !== "object") s = {};
+    return { solved: s.solved || 0, attempts: s.attempts || 0, best: s.best == null ? null : s.best };
   }
   function renderScore() {
     const s = readScore();
-    $("score").textContent = `Solved ${s.solved} / ${s.attempts} attempts`;
+    let txt = `Solved ${s.solved} / ${s.attempts} attempts`;
+    if (s.best !== null) txt += ` · best ${s.best} test${s.best === 1 ? "" : "s"}`;
+    $("score").textContent = txt;
   }
 
   // ---- session lifecycle -------------------------------------------------
@@ -199,10 +277,10 @@
     loadSelectedReagent();
     $("result").textContent = "";
     $("result").className = "result";
-    $("explain").className = "explain";
-    $("explain").innerHTML =
-      '<div class="explain-head">Observe first</div><p class="explain-obs">Look at the colour of the unknown solution — coloured ions leave a clue. Then run reagent tests and read each result here.</p>';
+    $("add-btn").disabled = false;
+    renderObservePrompt();
     renderNotebook();
+    renderTestsLeft();
   }
 
   function newChallenge() {
@@ -245,12 +323,15 @@
   function init() {
     buildSelects();
     renderScore();
+    setDifficulty(readDifficulty(), false);
     $("reagent-select").addEventListener("change", loadSelectedReagent);
     $("add-btn").addEventListener("click", runTest);
     $("fresh-btn").addEventListener("click", freshSample);
     $("identify-form").addEventListener("submit", identify);
     $("new-btn").addEventListener("click", newChallenge);
     $("share-btn").addEventListener("click", shareChallenge);
+    $("diff-easy").addEventListener("click", () => setDifficulty("easy", true));
+    $("diff-hard").addEventListener("click", () => setDifficulty("hard", true));
 
     loadSalt(saltFromHash() || randomSalt(), false);
   }
